@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>React Pocket-Style Bookmarks</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/react@17/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@17/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/babel-standalone@6/babel.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <style>
+        .gradient-bg {
+            background: linear-gradient(135deg, #f3e7f3 0%, #fff4e6 100%);
+        }
+        .card-hover:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+        }
+    </style>
+</head>
+<body class="gradient-bg min-h-screen">
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        function App() {
+            const [savedItems, setSavedItems] = useState([
+                {
+                    id: 1,
+                    title: "Understanding Web Development",
+                    url: "https://example.com/article1",
+                    thumbnail: "https://source.unsplash.com/random/800x600?technology,1",
+                    favorite: false,
+                    archived: false
+                },
+                {
+                    id: 2,
+                    title: "Modern Design Trends",
+                    url: "https://example.com/article2",
+                    thumbnail: "https://source.unsplash.com/random/800x600?design,1",
+                    favorite: false,
+                    archived: false
+                },
+                {
+                    id: 3,
+                    title: "Future of Technology",
+                    url: "https://example.com/article3",
+                    thumbnail: "https://source.unsplash.com/random/800x600?future,1",
+                    favorite: false,
+                    archived: false
+                }
+            ]);
+
+            const [view, setView] = useState('saves');
+            const [searchQuery, setSearchQuery] = useState('');
+            const [showAddModal, setShowAddModal] = useState(false);
+            const [newUrl, setNewUrl] = useState('');
+
+            const toggleFavorite = (id) => {
+                setSavedItems(items => 
+                    items.map(item => 
+                        item.id === id 
+                            ? {...item, favorite: !item.favorite}
+                            : item
+                    )
+                );
+            };
+
+            const toggleArchive = (id) => {
+                setSavedItems(items => 
+                    items.map(item => 
+                        item.id === id 
+                            ? {...item, archived: !item.archived}
+                            : item
+                    )
+                );
+            };
+
+            const deleteItem = (id) => {
+                setSavedItems(items => items.filter(item => item.id !== id));
+            };
+
+            const addNewBookmark = async () => {
+                if (!newUrl) return;
+                
+                // In a real application, you would fetch metadata from the URL
+                const newItem = {
+                    id: Date.now(),
+                    title: `Bookmark from ${new URL(newUrl).hostname}`,
+                    url: newUrl,
+                    thumbnail: `https://source.unsplash.com/random/800x600?website,${Date.now()}`,
+                    favorite: false,
+                    archived: false
+                };
+
+                setSavedItems(prev => [...prev, newItem]);
+                setNewUrl('');
+                setShowAddModal(false);
+            };
+
+            const filteredItems = savedItems.filter(item => {
+                const matchesSearch = item.title.toLowerCase().includes(searchQuery.toLowerCase());
+                if (view === 'favorites') return matchesSearch && item.favorite;
+                if (view === 'archive') return matchesSearch && item.archived;
+                return matchesSearch && !item.archived;
+            });
+
+            return (
+                <div className="container mx-auto p-4">
+                    {/* Header */}
+                    <header className="flex justify-between items-center mb-6 p-2">
+                        <div className="flex items-center gap-6">
+                            <div className="text-gray-800 font-semibold text-lg">
+                                <i className="bi bi-bookmark-fill"></i> Pocket
+                            </div>
+                            <nav className="flex gap-4">
+                                <button 
+                                    onClick={() => setView('saves')}
+                                    className={`${view === 'saves' ? 'text-gray-800' : 'text-gray-600'} hover:text-gray-800`}
+                                >
+                                    Saves
+                                </button>
+                                <button 
+                                    onClick={() => setView('collections')}
+                                    className={`${view === 'collections' ? 'text-gray-800' : 'text-gray-600'} hover:text-gray-800`}
+                                >
+                                    Collections
+                                </button>
+                            </nav>
+                        </div>
+                        <div className="flex items-center gap-4">
+                            <button 
+                                onClick={() => setShowAddModal(true)}
+                                className="text-gray-600 hover:text-gray-800"
+                            >
+                                <i className="bi bi-link-45deg text-2xl"></i>
+                            </button>
+                            <div className="relative">
+                                <input
+                                    type="text"
+                                    placeholder="Search..."
+                                    value={searchQuery}
+                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                    className="pl-8 pr-4 py-1 rounded-lg bg-white/50 focus:outline-none focus:ring-2 focus:ring-purple-200"
+                                />
+                                <i className="bi bi-search absolute left-2 top-2 text-gray-400"></i>
+                            </div>
+                            <button className="text-gray-600 hover:text-gray-800">
+                                <i className="bi bi-person-circle text-xl"></i>
+                            </button>
+                        </div>
+                    </header>
+
+                    <div className="flex gap-6">
+                        {/* Sidebar */}
+                        <aside className="w-48 space-y-2">
+                            <button 
+                                onClick={() => setView('favorites')}
+                                className={`w-full text-left px-4 py-2 rounded-lg hover:bg-white/50 flex items-center gap-2 
+                                    ${view === 'favorites' ? 'bg-white/30' : ''}`}
+                            >
+                                <i className="bi bi-star"></i>
+                                <span>Favorite</span>
+                            </button>
+                            <button 
+                                onClick={() => setView('archive')}
+                                className={`w-full text-left px-4 py-2 rounded-lg hover:bg-white/50 flex items-center gap-2
+                                    ${view === 'archive' ? 'bg-white/30' : ''}`}
+                            >
+                                <i className="bi bi-archive"></i>
+                                <span>Archive</span>
+                            </button>
+                        </aside>
+
+                        {/* Main Content */}
+                        <main className="flex-1">
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                {filteredItems.map(item => (
+                                    <div key={item.id} className="bg-white p-4 rounded-lg shadow-sm card-hover transition-all duration-200">
+                                        <img src={item.thumbnail} alt={item.title} className="w-full h-32 object-cover rounded-lg mb-3"/>
+                                        <h3 className="font-medium text-gray-800 mb-1">{item.title}</h3>
+                                        <p className="text-gray-500 text-sm">{item.url}</p>
+                                        <div className="flex justify-end mt-3 gap-2">
+                                            <a 
+                                                href={item.url} 
+                                                target="_blank" 
+                                                rel="noopener noreferrer"
+                                                className="text-gray-400 hover:text-blue-500"
+                                            >
+                                                <i className="bi bi-box-arrow-up-right"></i>
+                                            </a>
+                                            <button 
+                                                onClick={() => toggleFavorite(item.id)} 
+                                                className={`${item.favorite ? 'text-yellow-500' : 'text-gray-400'} hover:text-yellow-500`}
+                                            >
+                                                <i className={`bi ${item.favorite ? 'bi-star-fill' : 'bi-star'}`}></i>
+                                            </button>
+                                            <button 
+                                                onClick={() => toggleArchive(item.id)} 
+                                                className={`${item.archived ? 'text-blue-500' : 'text-gray-400'} hover:text-gray-600`}
+                                            >
+                                                <i className="bi bi-archive"></i>
+                                            </button>
+                                            <button 
+                                                onClick={() => deleteItem(item.id)} 
+                                                className="text-gray-400 hover:text-red-500"
+                                            >
+                                                <i className="bi bi-trash"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </main>
+                    </div>
+
+                    {/* Add URL Modal */}
+                    {showAddModal && (
+                        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+                            <div className="bg-white p-6 rounded-lg w-96">
+                                <h3 className="text-lg font-semibold mb-4">Add New Bookmark</h3>
+                                <input
+                                    type="url"
+                                    placeholder="Enter URL"
+                                    value={newUrl}
+                                    onChange={(e) => setNewUrl(e.target.value)}
+                                    className="w-full p-2 border rounded mb-4"
+                                />
+                                <div className="flex justify-end gap-2">
+                                    <button
+                                        onClick={() => setShowAddModal(false)}
+                                        className="px-4 py-2 text-gray-600 hover:text-gray-800"
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button
+                                        onClick={addNewBookmark}
+                                        className="px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700"
+                                    >
+                                        Add
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            );
+        }
+
+        ReactDOM.render(<App />, document.getElementById('root'));
+    </script>
+<script>document.body.addEventListener('wheel', e => { if (!e.ctrlKey) return; e.preventDefault(); return }, { passive: false })</script>
+	</body>
+</html>
